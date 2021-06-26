@@ -6,11 +6,12 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, LSTM
 import matplotlib.pyplot as plt
+from tensorflow.python.data.ops.dataset_ops import DatasetSource
 plt.style.use('fivethirtyeight')
 
 
 # grabs a specific stock you want 
-df = web.DataReader('AMD', data_source='yahoo', start='2012-01-01', end ='2021-6-17')
+df = web.DataReader('AMD', data_source='yahoo', start='2012-01-01', end ='2021-6-25')
 
 df.shape
 
@@ -66,7 +67,7 @@ x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
 model = Sequential()
 model.add(LSTM(50, return_sequences=True, input_shape = (x_train.shape[1], 1)))
 model.add(LSTM(50, return_sequences= False))
-model.add(Dense(25))
+model.add(Dense(100))
 model.add(Dense(1))
 
 # 
@@ -103,13 +104,32 @@ valid['Predictions'] = predictions
 
 #Visualize
 
-plt.figure(figsize=(16, 8))
-plt.title('Model')
-plt.xlabel('Date', fontsize=18)
-plt.ylabel('Close Price USD', fontsize=18)
-plt.plot(train['Close'])
-plt.plot(valid[['Close', 'Predictions']])
-plt.legend(['Train', 'Val', 'Predictions'], loc = 'lower right')
-plt.show()
+# plt.figure(figsize=(16, 8))
+# plt.title('Model')
+# plt.xlabel('Date', fontsize=18)
+# plt.ylabel('Close Price USD', fontsize=18)
+# plt.plot(train['Close'])
+# plt.plot(valid[['Close', 'Predictions']])
+# plt.legend(['Train', 'Val', 'Predictions'], loc = 'lower right')
+# plt.show()
 
-print(valid)
+# print(valid)
+amd_quote = web.DataReader('AMD', data_source='yahoo', start='2012-01-01', end ='2021-6-25')
+
+new_df = amd_quote.filter(['Close'])
+
+last_365_days = new_df[-365:].values
+
+last_scale = scaler.transform(last_365_days)
+
+X_test = []
+X_test.append(last_scale)
+
+X_test = np.array(X_test)
+
+X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
+
+pred_price = model.predict(X_test)
+pred_price = scaler.inverse_transform(pred_price)
+
+print(pred_price)
